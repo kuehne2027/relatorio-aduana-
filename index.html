@@ -548,12 +548,16 @@ const normId = s => String(s??'').trim().replace(/\s+/g,'');
 /* ---------------- estado ---------------- */
 let regs = new Map();     // id -> registro
 let fila = [];            // alterações a enviar
-let cfg = { url:'', token:'', user:'', auto:30 };
+const URL_PADRAO = 'https://script.google.com/macros/s/AKfycbzUtxfagENFSbMgoZWViXaIGdLv89xoF8l-LI_terRCQcb69xVDBqbTYFYUDv9jsyQ/exec';
+let cfg = { url:URL_PADRAO, token:'', user:'', auto:30 };
 let sessao = [];
 let syncTimer = null, sincronizando = false, ultimaSync = '', ultimoErro = '';
 
 function carregar(){
   try { cfg = Object.assign(cfg, JSON.parse(localStorage.getItem(LS.cfg)||'{}')); } catch(e){}
+  if (!cfg.url) cfg.url = URL_PADRAO; // sempre ligado na planilha oficial
+  if (!cfg.auto && cfg.auto!==0) cfg.auto = 30;
+  if (cfg.auto===0) cfg.auto = 30;
   try { (JSON.parse(localStorage.getItem(LS.regs)||'[]')).forEach(r=>regs.set(r.id,r)); } catch(e){}
   try { fila = JSON.parse(localStorage.getItem(LS.fila)||'[]'); } catch(e){}
   // migra registros de versão anterior do app, se existirem
