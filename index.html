@@ -179,7 +179,7 @@ tbody tr:hover td{background:var(--wash)}
 <div class="pills-wrap">
 <nav id="nav">
   <button data-t="dash" class="act">Visão geral</button>
-  <button data-t="cad">Cadastro</button>
+  <button data-t="cad">Análise</button>
   <button data-t="pend">Pendências</button>
   <button data-t="hist">Histórico</button>
   <button data-t="rel">Relatórios</button>
@@ -210,28 +210,32 @@ tbody tr:hover td{background:var(--wash)}
 
 <!-- ================= CADASTRO ================= -->
 <section class="tab" id="t-cad">
-  <div class="page-head"><div class="eyebrow">Aduana a Mais · Cadastro</div><h1>Registrar pacote</h1><p>Bipe o ID. Se ele já veio da bipagem da equipe, o cadastro abre para você completar.</p></div>
+  <div class="page-head"><div class="eyebrow">Aduana a Mais · Análise</div><h1>Analisar pacote</h1><p>Os IDs bipados pela equipe na planilha chegam aqui. Escolha um da lista (ou bipe o ID), preencha o que faltar e salve.</p></div>
   <div class="card">
         <div class="form">
-      <div class="f w2"><label>ID do pacote (bipe aqui)</label><input id="cId" class="idbox" autocomplete="off" placeholder="Bipe ou digite o ID e tecle Enter"></div>
+      <div class="f w2"><label>ID do pacote</label><input id="cId" class="idbox" autocomplete="off" placeholder="Escolha na lista abaixo ou bipe o ID"></div>
       <div class="f"><label>Data</label><input type="date" id="cData"></div>
       <div class="f"><label>Ciclo</label><div class="seg" id="cCic"><button data-v="CPM">CPM</button><button data-v="AM">AM</button><button data-v="PM">PM</button><button data-v="SD">SD</button></div></div>
       <div class="f w2"><label>Descrição do produto</label><input id="cDesc" placeholder="Ex.: Fone Bluetooth JBL"></div>
       <div class="f"><label>Valor (R$)</label><input id="cVal" inputmode="decimal" placeholder="0,00"></div>
       <div class="f"><label>Status</label><div class="seg st" id="cSt"><button data-v="Pendente">Pendente</button><button data-v="No piso">No piso</button><button data-v="Atrelado">Atrelado</button></div></div>
       <div class="f"><label>Gaiola encontrada</label><input id="cGE" placeholder="Ex.: SR1-A-3-2" style="text-transform:uppercase"></div>
-      <div class="f"><label>Gaiola correta</label><input id="cGC" placeholder="Gaiola a que pertence" style="text-transform:uppercase"></div>
+      <div class="f"><label>Gaiola correta (a que pertence)</label><input id="cGC" placeholder="Gaiola a que pertence" style="text-transform:uppercase"></div>
       <div class="f w2"><label>Observações</label><input id="cObs" placeholder="Opcional"></div>
     </div>
     <div class="found" id="cFound"></div>
     <div class="flex" style="margin-top:14px">
-      <button class="btn ok" id="cSalvar">Salvar · Enter</button>
+      <button class="btn ok" id="cSalvar">Salvar análise · Enter</button>
       <button class="btn sec" id="cLimpar">Limpar</button>
       <button class="btn bad" id="cExcluir" style="display:none">Excluir</button>
-      <label class="muted flex" style="gap:6px;margin-left:auto"><input type="checkbox" id="cManter" checked> manter data, ciclo e gaiola encontrada entre bipagens</label>
+      <label class="muted flex" style="gap:6px;margin-left:auto"><input type="checkbox" id="cProx" checked> abrir o próximo da lista ao salvar</label><input type="checkbox" id="cManter" hidden>
     </div>
   </div>
-  <div class="card" style="margin-top:14px"><h3>Registrados nesta sessão</h3><div class="tw" id="sessao"><div class="empty">Nada registrado ainda nesta sessão.</div></div></div>
+  <div class="card" style="margin-top:14px"><h3 id="aTit">Aguardando análise</h3>
+    <div class="bar" style="margin-bottom:10px"><div class="f"><label>Ciclo</label><select id="aCic"><option value="">Todos</option><option>CPM</option><option>AM</option><option>PM</option><option>SD</option></select></div>
+      <div class="f" style="flex:1;min-width:200px"><label>Buscar</label><input id="aBusca" placeholder="ID, gaiola..."></div></div>
+    <div class="tw" id="aguardando"></div></div>
+  <div class="card" style="margin-top:14px"><h3>Analisados nesta sessão</h3><div class="tw" id="sessao"><div class="empty">Nenhum pacote analisado ainda nesta sessão.</div></div></div>
 </section>
 
 <!-- ================= PENDÊNCIAS ================= -->
@@ -793,10 +797,10 @@ function carregarId(){
     $('#cDesc').value=r.descricao; $('#cVal').value=r.valor?String(r.valor).replace('.',','):''; $('#cData').value=r.data||hoje();
     $('#cGE').value=r.gaiolaEncontrada; $('#cGC').value=r.gaiolaCorreta; $('#cObs').value=r.obs;
     cCiclo=r.ciclo; segSet('#cCic',r.ciclo); cStatus=r.status; segSet('#cSt',r.status);
-    box.className='found show ex'; box.innerHTML=`⚠ ID já registrado em ${fmtD(r.data)} (${r.origem||'—'}${r.bipadoPor?' · '+esc(r.bipadoPor):''}). Você está <b>editando</b> o cadastro.`;
+    box.className='found show ex'; box.innerHTML=`📦 Bipado em ${r.bipadoEm?fmtD(r.bipadoEm.slice(0,10))+" às "+r.bipadoEm.slice(11,16):fmtD(r.data)}${r.ciclo?" · ciclo "+r.ciclo:""}${r.bipadoPor?" · por "+esc(r.bipadoPor):""}. Preencha o que faltar e salve.`;
     $('#cExcluir').style.display='';
   } else {
-    editando=null; box.className='found show nw'; box.innerHTML='✔ ID novo — preencha os dados e salve.'; $('#cExcluir').style.display='none';
+    editando=null; box.className='found show nw'; box.innerHTML='✔ ID novo (não veio da planilha) — preencha e salve.'; $('#cExcluir').style.display='none';
   }
   return true;
 }
@@ -811,10 +815,28 @@ function salvarCad(){
   });
   gravar(r);
   sessao = sessao.filter(x=>x!==id); sessao.unshift(id);
-  toast((antigo.id?'✏️ Atualizado ':'✅ Registrado ')+id);
-  limparCad(false); renderSessao();
+  toast((antigo.id?'✅ Analisado ':'✅ Analisado ')+id);
+  limparCad(true); renderSessao();
+  if ($('#cProx').checked) { const prox = listaAguardando()[0]; if (prox) analisar(prox.id); }
 }
-function renderSessao(){ $('#sessao').innerHTML = sessao.length ? tabela(sessao.map(i=>regs.get(i)).filter(Boolean), true) : '<div class="empty">Nada registrado ainda nesta sessão.</div>'; }
+function faltando(r){ const f=[]; if(r.status==='Pendente') f.push('direcionar'); if(!r.descricao) f.push('descrição'); if(!r.valor) f.push('valor'); if(!r.gaiolaCorreta) f.push('gaiola correta'); return f; }
+function listaAguardando(){
+  const q = normTxt($('#aBusca').value), c = $('#aCic').value;
+  return [...regs.values()].filter(r => (r.status==='Pendente' || !r.descricao || !r.valor) && (!c || r.ciclo===c)
+      && (!q || normTxt(r.id+' '+r.gaiolaEncontrada).includes(q)))
+    .sort((a,b)=>(a.bipadoEm||a.atualizadoEm||'').localeCompare(b.bipadoEm||b.atualizadoEm||''));
+}
+function renderAguardando(){
+  const l = listaAguardando();
+  $('#aTit').innerHTML = `Aguardando análise <span class="muted" style="font-family:var(--f-sans);font-size:12px">· ${l.length} pacote(s) vindos da planilha</span>`;
+  if (!l.length) { $('#aguardando').innerHTML = '<div class="empty">🎉 Nenhum pacote aguardando análise.</div>'; return; }
+  $('#aguardando').innerHTML = `<table><thead><tr><th>ID</th><th>Bipado em</th><th>Ciclo</th><th>Gaiola encontrada</th><th>Falta</th><th></th></tr></thead><tbody>
+  ${l.map(r=>`<tr${editando===r.id?' style="outline:2px solid var(--accent)"':''}><td class="mono">${esc(r.id)}</td><td>${r.bipadoEm?fmtD(r.bipadoEm.slice(0,10))+' '+r.bipadoEm.slice(11,16):fmtD(r.data)}</td>
+  <td>${r.ciclo?`<span class="cic">${r.ciclo}</span>`:'—'}</td><td class="mono">${esc(r.gaiolaEncontrada)||'—'}</td>
+  <td class="muted">${faltando(r).join(', ')}</td><td><button class="btn sm" onclick="analisar('${esc(r.id)}')">Analisar</button></td></tr>`).join('')}</tbody></table>`;
+}
+window.analisar = id => { $('#cId').value=id; carregarId(); renderAguardando(); window.scrollTo({top:0,behavior:'smooth'}); setTimeout(()=>$('#cDesc').focus(),200); };
+function renderSessao(){ renderAguardando(); $('#sessao').innerHTML = sessao.length ? tabela(sessao.map(i=>regs.get(i)).filter(Boolean), true) : '<div class="empty">Nenhum pacote analisado ainda nesta sessão.</div>'; }
 window.editar = id => { abrirTab('cad'); $('#cId').value=id; carregarId(); $('#cDesc').focus(); };
 
 /* ---------------- pendências / histórico ---------------- */
@@ -825,7 +847,7 @@ function renderPend(){
   if (!lista.length) { $('#pTab').innerHTML='<div class="empty">🎉 Nenhuma pendência.</div>'; return; }
   $('#pTab').innerHTML = `<table><thead><tr><th>ID</th><th>Data</th><th>Ciclo</th><th>Gaiola encontrada</th><th>Bipado por</th><th>Direcionar</th></tr></thead><tbody>
   ${lista.map(r=>`<tr><td class="mono">${esc(r.id)}</td><td>${fmtD(r.data)}</td><td>${r.ciclo?`<span class="cic">${r.ciclo}</span>`:'—'}</td><td class="mono">${esc(r.gaiolaEncontrada)||'—'}</td><td>${esc(r.bipadoPor)||'—'}</td>
-  <td style="white-space:nowrap"><button class="btn sm ac" onclick="direcionar('${esc(r.id)}','No piso')">No piso</button> <button class="btn sm ok" onclick="direcionar('${esc(r.id)}','Atrelado')">Atrelado</button> <button class="btn sm sec" onclick="editar('${esc(r.id)}')">Completar</button></td></tr>`).join('')}</tbody></table>`;
+  <td style="white-space:nowrap"><button class="btn sm ac" onclick="direcionar('${esc(r.id)}','No piso')">No piso</button> <button class="btn sm ok" onclick="direcionar('${esc(r.id)}','Atrelado')">Atrelado</button> <button class="btn sm sec" onclick="editar('${esc(r.id)}')">Analisar</button></td></tr>`).join('')}</tbody></table>`;
 }
 window.direcionar = (id, st) => { const r = regs.get(id); if (!r) return; gravar(Object.assign({}, r, { status: st })); toast(`${id} → ${st}`); };
 function histLista(){
@@ -1034,7 +1056,8 @@ function ligar(){
   $('#cId').addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); if(carregarId()) $('#cDesc').focus(); }});
   $('#cId').addEventListener('change', carregarId);
   ['#cDesc','#cVal','#cGE','#cGC','#cObs','#cData'].forEach(s=>$(s).addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); salvarCad(); }}));
-  $('#cSalvar').onclick = salvarCad; $('#cLimpar').onclick = ()=>limparCad(true);
+  $('#cSalvar').onclick = salvarCad;
+  ['#aBusca','#aCic'].forEach(x=>$(x).addEventListener('input',renderAguardando)); $('#cLimpar').onclick = ()=>limparCad(true);
   $('#cExcluir').onclick = ()=>{ if(editando && confirm('Excluir o pacote '+editando+'?\nEle também sai da planilha.')){ excluir(editando); sessao=sessao.filter(x=>x!==editando); toast('🗑 Excluído'); limparCad(true); renderSessao(); } };
   // pendências / histórico
   ['#pCic','#pBusca'].forEach(s=>$(s).addEventListener('input',renderPend));
