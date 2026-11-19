@@ -971,11 +971,46 @@ ${tab}
 var CH=${JSON.stringify(charts||[])}, COR_ST=${JSON.stringify(COR_ST)}, PAL=${JSON.stringify(PALETA)};
 window.prontos=false;
 function desenhar(){ if(!window.Chart){ window.prontos=true; return; }
+  var F="'DM Sans', Inter, Arial, sans-serif", NAVY='#0b2545', MUT='#6b7f95';
+  Chart.defaults.font.family=F; Chart.defaults.color=MUT;
+  function grad(chart, horiz){ var a=chart.chartArea; if(!a) return '#0673e7';
+    var g = horiz ? chart.ctx.createLinearGradient(a.left,0,a.right,0) : chart.ctx.createLinearGradient(0,a.bottom,0,a.top);
+    g.addColorStop(0,'#0a5fd6'); g.addColorStop(1,'#19c3ff'); return g; }
+  var rotulos = { id:'rotulos', afterDatasetsDraw:function(ch){
+    var ctx=ch.ctx, t=ch.config.type; ctx.save();
+    if (t==='doughnut'){
+      var tot=ch.data.datasets[0].data.reduce(function(a,b){return a+b},0), m=ch.getDatasetMeta(0).data[0]; if(!m){ctx.restore();return;}
+      ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillStyle=NAVY; ctx.font='800 34px '+F; ctx.fillText(tot, m.x, m.y-8);
+      ctx.fillStyle=MUT; ctx.font='600 11px '+F; ctx.fillText('PACOTES', m.x, m.y+18);
+    } else {
+      var horiz = ch.options.indexAxis==='y';
+      ch.getDatasetMeta(0).data.forEach(function(bar,i){ var v=ch.data.datasets[0].data[i];
+        ctx.fillStyle=NAVY; ctx.font='800 13px '+F;
+        if (horiz){ ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(v, bar.x+8, bar.y); }
+        else { ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText(v, bar.x, bar.y-6); } });
+    } ctx.restore(); } };
   CH.forEach(function(c){ var el=document.getElementById(c.id); if(!el) return;
-    new Chart(el.getContext('2d'),{type:'bar',data:{labels:c.e.map(function(x){return x[0]}),datasets:[{data:c.e.map(function(x){return x[1]}),
-      backgroundColor:c.e.map(function(x,i){return c.st?COR_ST[x[0]]:PAL[i%PAL.length]}),borderRadius:5}]},
-      options:{animation:false,responsive:true,maintainAspectRatio:false,indexAxis:c.h?'y':'x',plugins:{legend:{display:false}},
-      scales:{x:{beginAtZero:true,ticks:{precision:0,font:{size:10}}},y:{beginAtZero:true,ticks:{precision:0,font:{size:10}}}}}});
+    var labels=c.e.map(function(x){return x[0]}), data=c.e.map(function(x){return x[1]}), max=Math.max.apply(null,data.concat([1]));
+    if (c.st){
+      new Chart(el.getContext('2d'),{type:'doughnut',plugins:[rotulos],
+        data:{labels:labels,datasets:[{data:data,backgroundColor:['#0a5fd6','#19c3ff','#ffb547'],borderColor:'#ffffff',borderWidth:4,borderRadius:8,spacing:2,hoverOffset:0}]},
+        options:{animation:false,responsive:true,maintainAspectRatio:false,cutout:'68%',layout:{padding:{top:4,bottom:4}},
+          plugins:{tooltip:{enabled:false},legend:{position:'right',labels:{usePointStyle:true,pointStyle:'circle',boxWidth:9,boxHeight:9,padding:14,color:NAVY,font:{size:12,weight:'700'},
+            generateLabels:function(ch){ var d=ch.data; return d.labels.map(function(l,i){ return {text:l+'  '+d.datasets[0].data[i],fillStyle:d.datasets[0].backgroundColor[i],strokeStyle:'transparent',pointStyle:'circle',index:i}; }); } }}}}});
+      return;
+    }
+    new Chart(el.getContext('2d'),{type:'bar',plugins:[rotulos],
+      data:{labels:labels,datasets:[{data:data,backgroundColor:function(ctx){return grad(ctx.chart,!!c.h)},borderRadius:c.h?8:10,borderSkipped:false,
+        barPercentage:c.h?0.7:0.62,categoryPercentage:0.8,maxBarThickness:c.h?22:56}]},
+      options:{animation:false,responsive:true,maintainAspectRatio:false,indexAxis:c.h?'y':'x',
+        layout:{padding:c.h?{right:30,top:4}:{top:24}},
+        plugins:{legend:{display:false},tooltip:{enabled:false}},
+        scales:c.h ? {
+          x:{display:false,beginAtZero:true,suggestedMax:max*1.12,grid:{display:false}},
+          y:{grid:{display:false},border:{display:false},ticks:{color:NAVY,font:{size:11,weight:'700',family:"'JetBrains Mono', monospace"}}} }
+        : {
+          x:{grid:{display:false},border:{display:false},ticks:{color:NAVY,font:{size:12,weight:'800'}}},
+          y:{display:false,beginAtZero:true,suggestedMax:max*1.18,grid:{display:false}} } }});
   }); window.prontos=true; }
 if(document.readyState==='complete') desenhar(); else window.addEventListener('load',desenhar);
 <\/script></body></html>`;
